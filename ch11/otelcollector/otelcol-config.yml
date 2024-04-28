@@ -1,0 +1,70 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+        cors:
+          allowed_origins:
+            - "http://*"
+            - "https://*"
+
+
+processors:
+  batch:
+    send_batch_size: 50
+    timeout: 5s
+  memory_limiter:
+    check_interval: 2s
+    limit_mib: 1800
+    spike_limit_mib: 500
+  transform:
+    log_statements:
+      - context: log
+        statements: 
+          - set(attributes["app"], body["app"])
+          - set(attributes["level"], body["level"])
+
+  attributes:
+    actions:
+      - action: insert
+        key: loki.attribute.labels
+        value:  app , level
+      - action: insert
+        key: loki.format
+        value: raw
+
+exporters:
+  debug:
+    verbosity: detailed
+  loki:
+    endpoint: "http://loki:3100/loki/api/v1/push"
+    default_labels_enabled:
+      exporter: false
+      level: true
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+
+extensions:
+  health_check:
+      endpoint: :13133
+  pprof:
+    endpoint: :1888
+  zpages:
+    endpoint: :55679
+
+service:
+  extensions: [pprof, zpages, health_check]
+  pipelines:
+    logs:
+      receivers: [ otlp]
+      processors: [transform, attributes]
+      exporters: [ loki]
+    traces:
+      receivers: [otlp]
+      processors: [batch, memory_limiter]
+      exporters: [debug, otlp/tempo]

@@ -1,0 +1,76 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+        cors:
+          allowed_origins:
+            - "http://*"
+            - "https://*"
+  httpcheck/frontendproxy:
+    targets:
+      - endpoint: http://frontendproxy:${env:ENVOY_PORT}
+
+exporters:
+  debug:
+  otlp:
+    endpoint: "tempo:4317"
+    tls:
+      insecure: true
+  otlphttp/prometheus:
+    endpoint: "http://prometheus:9090/api/v1/otlp"
+    tls:
+      insecure: true
+  opensearch:
+    logs_index: otel
+    http:
+      endpoint: "http://opensearch:9200"
+      tls:
+        insecure: true
+  loki:
+    endpoint: "http://loki:3100/loki/api/v1/push"
+
+processors:
+  batch:
+    send_batch_size: 50
+    timeout: 5s
+  memory_limiter:
+    check_interval: 2s
+    limit_mib: 1800
+    spike_limit_mib: 500
+  transform:
+    log_statements:
+      - context: log
+        statements: 
+          - set(attributes["service"], body["container_name"])
+
+  attributes:
+    actions:
+      - action: insert
+        key: loki.attribute.labels
+        value:  service
+      - action: insert
+        key: loki.format
+        value: raw
+
+
+connectors:
+  spanmetrics:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp, debug, spanmetrics]
+    metrics:
+      receivers: [httpcheck/frontendproxy, otlp, spanmetrics]
+      processors: [batch]
+      exporters: [otlphttp/prometheus, debug]
+    logs:
+      receivers: [otlp]
+      processors: [transform, attributes]
+      exporters: [loki, opensearch, debug]

@@ -1,0 +1,9 @@
+go 1.21.1
+
+use (
+	./ch6/exemplar
+	./ch6/trace
+	./ch7/app
+	./ch7/other_app
+	./ch11/app
+)

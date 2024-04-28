@@ -1,0 +1,133 @@
+version: '3.9'
+
+services:
+  app:
+    container_name: app
+    build: ./app
+    depends_on:
+      fluentd:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    networks:
+      - ch11
+    logging:
+      driver: fluentd
+      options:
+        fluentd-async-connect: "true"
+        fluentd-address: localhost:24224
+        tag: app
+
+  grafana:
+    image: grafana/grafana:10.4.1
+    container_name: grafana
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_FEATURE_TOGGLES_ENABLE=traceToMetrics
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+
+    ports:
+      - "3000:3000"
+    networks:
+      - ch11
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki/loki.yaml:/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    networks:
+      - ch11
+
+  # Generate fake traces...
+  k6-tracing:
+    image: ghcr.io/grafana/xk6-client-tracing:v0.0.3
+    environment:
+      - ENDPOINT=otel-collector:4317
+    restart: always
+    depends_on:
+      otel-collector:
+        condition: service_started
+    networks:
+      - ch11
+
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.97.0
+    container_name: collector
+    command: [ "--config=/etc/otelcol-config.yml" ]
+    volumes:
+        - ./otelcollector/otelcol-config.yml:/etc/otelcol-config.yml
+    ports:
+      - "4317:4317"     # OTLP over GRPC receiver
+      - "4318:4318"     # OTLP over HTTP receiver
+      - "55679:55679" # zpages extension
+      - "1888:1888"   # pprof extension
+      - "13133:13133" # health_check extension
+    depends_on:
+      - loki
+    networks:
+      - ch11
+
+  fluentd:
+    image: fluent/fluent-bit
+    volumes:
+        - ./fluentbit:/fluent-bit/etc
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    hostname: fluentd
+    depends_on:
+      otel-collector:
+        condition: service_started
+    networks:
+      - ch11
+
+  tempo:
+    image: grafana/tempo:latest
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo.yaml
+      #- ./tempo-data:/tmp/tempo
+    ports:
+      - "14268:14268"  # jaeger ingest
+      - "3200:3200"   # tempo
+      #- "9095:9095" # tempo grpc
+      - "4327:4317"  # otlp grpc
+      - "4328:4318"  # otlp http
+      #- "9411:9411"   # zipkin
+    networks:
+      - ch11
+
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - --config.file=/etc/prometheus.yaml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --enable-feature=remote-write-receiver
+    volumes:
+      - ./prometheus/prometheus.yaml:/etc/prometheus.yaml
+    ports:
+      - "9090:9090"
+    networks:
+      - ch11
+
+networks:
+  ch11:
+    name: ch11
+    driver: bridge
+
+volumes:
+  loki-data:
+    driver: local

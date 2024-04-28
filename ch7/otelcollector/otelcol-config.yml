@@ -1,0 +1,84 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+        endpoint: "0.0.0.0:4318"
+        cors:
+          allowed_origins:
+            - "http://*"
+            - "https://*"
+
+processors:
+  batch:
+  memory_limiter:
+      check_interval: 1s
+      limit_mib: 4000
+      spike_limit_mib: 800
+  attributes:
+    actions:
+      - action: insert
+        key: loki.format
+        value: logfmt
+  filter/ottl:
+    logs:
+      log_record:
+        - 'IsMatch(body, ".*pwd.*")'
+  transform:
+    trace_statements:
+      - context: spanevent
+        statements:
+          - set(attributes["pwd"], "***") where attributes["pwd"] != nil
+
+exporters:
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
+  otlp:
+    endpoint: "tempo:4317"
+    tls:
+      insecure: true
+  loki:
+    endpoint: "http://loki:3100/loki/api/v1/push"
+    default_labels_enabled:
+      exporter: true
+      job: true
+      level: true
+      instance: true
+  prometheus:
+    endpoint: "otelcol:9464"
+    resource_to_telemetry_conversion:
+      enabled: true
+    enable_open_metrics: true
+    
+
+connectors:
+  spanmetrics:
+    namespace: span.metrics
+
+extensions:
+  health_check:
+      endpoint: :13133
+  pprof:
+    endpoint: :1888
+  zpages:
+    endpoint: :55679
+
+service:
+  extensions: [pprof, zpages, health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [transform, memory_limiter, batch]
+      exporters: [ debug, otlp, spanmetrics]
+    metrics:
+      receivers: [otlp, spanmetrics]
+      processors: [memory_limiter, batch]
+      exporters: [debug, prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [filter/ottl, attributes,memory_limiter, batch]
+      exporters: [debug, loki]

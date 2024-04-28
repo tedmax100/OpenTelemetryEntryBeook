@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: grafana
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_INSTALL_PLUGINS=grafana-github-datasource
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,yesoreyeram-infinity-datasource
+    volumes:
+      - ./grafana.ini:/etc/grafana/grafana.ini
+      - ./provisioning/:/etc/grafana/provisioning/
+    ports:
+      - "3000:3000"
+    networks:
+      - ch9
+
+networks:
+  ch9:
+    name: ch9
+    driver: bridge

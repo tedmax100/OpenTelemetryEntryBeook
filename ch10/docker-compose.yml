@@ -1,0 +1,85 @@
+version: '3.9'
+
+services:
+  app:
+    container_name: app
+    build: ./app
+    depends_on:
+      fluentd:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    networks:
+      - ch10
+    logging:
+      driver: fluentd
+      options:
+        fluentd-async-connect: "true"
+        fluentd-address: localhost:24224
+        tag: app
+
+  grafana:
+    image: grafana/grafana:10.3.5
+    container_name: grafana
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+
+    ports:
+      - "3000:3000"
+    networks:
+      - ch10
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki/loki.yaml:/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    networks:
+      - ch10
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.97.0
+    container_name: collector
+    command: [ "--config=/etc/otelcol-config.yml" ]
+    volumes:
+        - ./otelcollector/otelcol-config.yml:/etc/otelcol-config.yml
+    ports:
+      - "4318:4318"     # OTLP over HTTP receiver
+      # - "24223:24223"
+      # - "24223:24223/udp"
+    depends_on:
+      - loki
+      #- fluentd
+    networks:
+      - ch10
+
+  fluentd:
+    image: fluent/fluent-bit
+    volumes:
+        - ./fluentbit:/fluent-bit/etc
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    hostname: fluentd
+    networks:
+      - ch10
+
+networks:
+  ch10:
+    name: ch10
+    driver: bridge
+
+volumes:
+  loki-data:
+    driver: local
