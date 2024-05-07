@@ -50,7 +50,7 @@
 
 Ch 5 
 
-    - OTel Errors
+- OTel Errors
 
 Ch13 的目錄中，還有作者最近閱讀 k6 Blog 整理出來的筆記供讀者參考參考。
 
