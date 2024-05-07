@@ -22,7 +22,7 @@
 │   ├── CH 11：Grafana Tempo
 │   └── CH 12：改造 OpenTelemetry Demo專案
 ├── 第四部分：負載測試工具
-└── └── CH 13：Grafana k6‧系統測試神器
+├── └── CH 13：Grafana k6‧系統測試神器
 └── 附錄 Collector 內建指標
 ```
 
