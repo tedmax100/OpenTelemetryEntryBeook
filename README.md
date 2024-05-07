@@ -4,6 +4,12 @@
 
 該儲存庫是 IThome 鐵人賽出版作品 《OpenTelemetry 入門指南︰建立全面可觀測性架構》的程式範例。
 
+作者︰雷N
+
+[iT邦鐵人檔案](https://ithelp.ithome.com.tw/users/20104930)
+
+[Linkedin](https://www.linkedin.com/in/%E5%81%A5%E8%AA%A0-%E5%91%82-0631b4127/)
+
 ## 目錄
 ```
 ├── 第一部份 : 從傳統到轉型：探索現代 IT 架構
