@@ -157,6 +157,7 @@ Span 看起來對於捕獲錯誤很有效，因為將 Span 的狀態設定為 Er
 最後，能根據團隊的具體需求以及遙測資料後端支持的功能，來選擇適合團隊現在的紀錄錯誤的方式。
 
 
+原文參考自 [Dude, where's my error? How OpenTelemetry records errors](https://opentelemetry.io/blog/2024/otel-errors/)
 
 
 [圖1]: ../images/otel_error_1.png
