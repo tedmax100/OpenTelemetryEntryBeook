@@ -303,8 +303,7 @@ export const ThresholdsConfig = {
 
 
 
-![image 34.png](./k6%20Best%20practices%20and%20guidelines-assets/image%2034.png)
-
+![img][圖1]
 
 
 為了能重複利用測市場景，需要避免將場景邏輯與其他測試概念給緊密的耦合。在設計時能考慮以下觀點︰
@@ -459,8 +458,7 @@ check(res, {
 
 也能根據同一個測試對象的回應來進行不同的指標分析。
 
-![image 35.png](./k6%20Best%20practices%20and%20guidelines-assets/image%2035.png)
-
+![img][圖2]
 
 
 傳統上，性能測試主要集中在測試工具本身內部蒐集結果，通常此工具是獨立運行的，這導致了對系統運行方面的可見度不足。
@@ -536,3 +534,7 @@ errorHandler.logError(!checkStatus, res);
 
 
 原文參考自 [k6 Best practices and guidelines](https://grafana.com/blog/2024/04/30/organizing-your-grafana-k6-performance-testing-suite-best-practices-to-get-started/?camp=blog&cnt=%F0%9F%92%90+It%27s+gonna+be+May%2C+and&mdm=social&src=li)
+
+
+[圖1]: ../images/img1.png
+[圖2]: ../images/img2.png
