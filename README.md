@@ -42,4 +42,6 @@ Ch13 的目錄中，還有作者最近閱讀 k6 Blog 整理出來的筆記供讀
 
 - [k6 Best Practices and Guidelines](/ch13/k6%20Best%20practices%20and%20guidelines.md)
 
+- [k6 Test Lifecycle](/ch13/k6%20Test%20lifecycle.md)
+
 - [Grafana k6 演示瀏覽器測試](https://youtube.com/playlist?list=PLUPlX-9QUIrMc8ZoG68SWaC54gEnWFa24&si=m1tqV2M5viVTetHY)
