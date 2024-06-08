@@ -2,7 +2,9 @@
 
 ---
 
-該儲存庫是 IThome 鐵人賽出版作品 《OpenTelemetry 入門指南︰建立全面可觀測性架構》的程式範例。
+該儲存庫是 IThome 鐵人賽出版作品 《[OpenTelemetry 入門指南︰建立全面可觀測性架構](https://www.drmaster.com.tw/bookinfo.asp?BookID=MP22334)》的程式範例。
+
+[博碩連結](https://www.drmaster.com.tw/bookinfo.asp?BookID=MP22334)
 
 作者︰雷N
 
