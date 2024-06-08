@@ -1,4 +1,4 @@
-# OpenTelemetry 入門書
+# OpenTelemetry 入門指南︰建立全面可觀測性架構
 
 ---
 
