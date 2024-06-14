@@ -30,9 +30,10 @@ class App {
       next();
     })
     router.get('/echo', async (req: Request, res: Response) => {
-      jsonLogger.info(null, { path: req.path });
+      jsonLogger.info(null, { path: req.path, query: req.query });
       await this.sleeper.sleep(1000);
-      res.json({ message: 'echo' });
+      const query = req.query;
+      res.json({ message: 'echo', query: query });
     });
     return router;
   } 

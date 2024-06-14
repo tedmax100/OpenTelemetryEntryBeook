@@ -15,7 +15,7 @@ describe('test echo service', () => {
   })
   it('test /echo respoonse with {message: echo}', async () => {
     return request(testApp.getApp()).get('/echo').expect(200).expect({
-      message: 'echo'
+      message: 'echo', query: {}
     });
   })
 })
