@@ -55,6 +55,11 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.47.1",
+    "@opentelemetry/instrumentation-express": "^0.40.1",
+    "@opentelemetry/instrumentation-winston": "^0.38.0",
+    "@opentelemetry/winston-transport": "^0.4.0",
     "express": "^4.19.2",
     "winston": "^3.13.0"
   }

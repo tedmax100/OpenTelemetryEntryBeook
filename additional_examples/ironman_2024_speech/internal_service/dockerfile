@@ -12,4 +12,4 @@ COPY --from=base-image app/dist app/package.json app/pnpm-lock.yaml ./
 RUN npm i -g pnpm
 RUN pnpm install --prod
 EXPOSE 3000
-ENTRYPOINT [ "node", "./dist/main" ]
+ENTRYPOINT [ "node", "--require", "@opentelemetry/auto-instrumentations-node/register", "main" ]
