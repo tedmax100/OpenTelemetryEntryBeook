@@ -6,6 +6,8 @@
 
 [博碩連結](https://www.drmaster.com.tw/bookinfo.asp?BookID=MP22334)
 
+[天瓏書局連結](https://www.tenlong.com.tw/products/9786263338739?list_name=p-r-zh_tw)
+
 作者︰雷N
 
 [iT邦鐵人檔案](https://ithelp.ithome.com.tw/users/20104930)
