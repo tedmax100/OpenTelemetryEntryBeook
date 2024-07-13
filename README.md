@@ -38,11 +38,22 @@
 └── 附錄 Collector 內建指標
 ```
 
+## 錯字修訂
+
+圖3-12 handnle -> handler
+
+圖4-3 Watefall -> Waterfall
+
+13-15 計量器(Gauge) -> 量規(Gauge)
+
 # 附加文章
 
 Ch 5 
 
 - [OTel Errors](/ch5/OTel%20Errors.md)
+
+Ch 7
+- [OTel Collector - Filter Processor 的用法很多種？](/ch7/filter_processor.md)
 
 Ch13 的目錄中，還有作者最近閱讀 k6 Blog 整理出來的筆記供讀者參考參考。
 
