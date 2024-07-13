@@ -665,24 +665,8 @@ type TraceFilters struct {
 // by the processor, captured under the 'include' and the second, exclude, to
 // define what is excluded from the processor.
 type MatchConfig struct {
-	// Include specifies the set of input data properties that must be present in order
-	// for this processor to apply to it.
-	// Note: If `exclude` is specified, the input data is compared against those
-	// properties after the `include` properties.
-	// This is an optional field. If neither `include` and `exclude` are set, all input data
-	// are processed. If `include` is set and `exclude` isn't set, then all
-	// input data matching the properties in this structure are processed.
 	Include *MatchProperties `mapstructure:"include"`
 
-	// Exclude specifies when this processor will not be applied to the input data
-	// which match the specified properties.
-	// Note: The `exclude` properties are checked after the `include` properties,
-	// if they exist, are checked.
-	// If `include` isn't specified, the `exclude` properties are checked against
-	// all input data.
-	// This is an optional field. If neither `include` and `exclude` are set, all input data
-	// is processed. If `exclude` is set and `include` isn't set, then all the
-	// input data that does not match the properties in this structure are processed.
 	Exclude *MatchProperties `mapstructure:"exclude"`
 }
 
@@ -737,6 +721,7 @@ type MatchProperties struct {
 Spans Matcher 只能比對關係圖中的 Span 上的屬性，幾乎就是針對名稱或 Kind 或是特定的 trace/span id 做比對。而 Trace Matcher 則能比對到下一層的 Span Context 的內容。
 
 [OTTL Span Context](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/contexts/ottlspan/README.md)
+
 [OTTL Span Event Context](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/contexts/ottlspanevent/README.md)
 
 舉個例子︰
