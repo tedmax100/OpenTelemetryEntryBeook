@@ -187,15 +187,15 @@ filter/spans_mix_config:
 > - Math expression
 
 > 關於 [OTTL 常見函數](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl/ottlfuncs#ottl-functions)
-> append
-> delete
-> keep
-> flatten
-> limit
-> merge_maps
-> replace
-> set
-> truncate
+> - append
+> - delete
+> - keep
+> - flatten
+> - limit
+> - merge_maps
+> - replace
+> - set
+> - truncate
 
 
 ## Filter Processor 程式碼解析
