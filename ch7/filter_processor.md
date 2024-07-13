@@ -149,7 +149,7 @@ traces:
         - 'IsMatch(name, ".*grpc.*")'
 ```
 
-當然也能混合在一起。
+多種混用就要命名多個filter，反正流水線執行順序是依照在各類型遙測資料流水線中安排的順序。
 ```yaml
 filter/metrics_mix_config:
   metrics:
@@ -158,8 +158,10 @@ filter/metrics_mix_config:
       expressions:
         - Label("foo") == "bar"
         - HasLabel("baz")
-    metric:
-      - 'attributes["test"] == "pass"'
+
+filter/ottlmetricname:
+  metric:
+    - 'attributes["test"] == "pass"'
 
 filter/spans_mix_config:
   spans:
