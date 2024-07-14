@@ -721,7 +721,7 @@ type MatchProperties struct {
 ```
 
 能參考書中的 Ch5-62 Trace Span 與 Span context 的關係圖。
-Spans Matcher 只能比對關係圖中的 Span 上的屬性，幾乎就是針對名稱或 Kind 或是特定的 trace/span id 做比對。而 Trace Matcher 則能比對到下一層的 Span Context 的內容。
+Spans Matcher 只能比對關係圖中的 Span 上的屬性，幾乎就是針對名稱或 Kind 或是特定的 trace/span id 做比對。而 Trace Matcher 則能比對到下一層的 Span Event 的內容。
 
 [OTTL Span Context](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/contexts/ottlspan/README.md)
 
