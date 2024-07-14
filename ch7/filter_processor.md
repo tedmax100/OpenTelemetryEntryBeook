@@ -512,7 +512,8 @@ regexp 中的 cache 設定是能用很少的記憶體空間，暫存過往結果
 
 ## metric 與 datapoint
 當設定配置被載入到 filter processor，轉成對應類型的物件後，會呼叫`func (cfg *Config) Validate()`檢查設定配置是否正確。
-會看到一句錯誤標語`cannot use ottl conditions and include/exclude for metrics at the same time`；我們不能把 include/exclude 與 OTTL 條件式放在同一個 filter 物件中。所以我們往後看，它這段也只會檢查 OTTL 的文法配置。也呼應最早
+會看到一句錯誤標語`cannot use ottl conditions and include/exclude for metrics at the same time`；我們不能把 include/exclude 與 OTTL 條件式放在同一個 filter 物件中。所以我們往後看，它這段也只會檢查 OTTL 的文法配置。
+也呼應最早也呼應最早提到不能正則表達式的比對方法與 OTTL 比對方法同時存在於同一個filter中（cannot use ottl conditions and include/exclude for metrics at the same time）
 
 ```go
 // Validate checks if the processor configuration is valid
