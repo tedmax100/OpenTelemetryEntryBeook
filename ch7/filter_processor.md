@@ -149,7 +149,7 @@ traces:
         - 'IsMatch(name, ".*grpc.*")'
 ```
 
-多種混用就要命名多個filter，反正流水線執行順序是依照在各類型遙測資料流水線中安排的順序。
+多種混用就要命名多個filter，反正流水線執行順序是依照在各類型遙測資料流水線中安排的順序。記得軟體設計的原則，單一職責的概念，每一個 Filter 盡量只處理單一欄位或比對或單一需求所需的最基本處理。組合排序的部份流給 pipeline。
 ```yaml
 filter/metrics_mix_config:
   metrics:
