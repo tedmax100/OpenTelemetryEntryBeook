@@ -243,7 +243,7 @@ groups:
 讓我們在`ch10/loki_ruler`下執行`docker compose up -d`，然後執行以下命令以新增以下的 rule 於 Loki Ruler 中。
 這些 HTTP API 在[](#rule_path)有簡單提到。
 
-`
+```bash
 curl --location 'http://localhost:3100/loki/api/v1/rules/tenant1' \
 --header 'X-Scope-OrgID: tenant1' \
 --header 'Content-Type: application/yaml' \
@@ -257,7 +257,8 @@ rules:
     expr: 10
     labels:
         soure: "static"'
-`
+```
+
 建立成功會取得以下結果。
 `
 http status : 202
@@ -270,11 +271,11 @@ http status : 202
 `
 
 然後能通過以下命令來確認是否rule新增成功。
-`
+```bash
 curl --location 'http://localhost:3100/loki/api/v1/rules/tenant1' \
 --header 'X-Scope-OrgID: tenant1' \
 --data ''
-`
+```
 
 會取得這樣樣回傳結果
 `
