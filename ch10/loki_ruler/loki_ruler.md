@@ -260,7 +260,7 @@ rules:
 ```
 
 建立成功會取得以下結果。
-`
+```json
 http status : 202
 {
     "status": "success",
@@ -268,7 +268,7 @@ http status : 202
     "errorType": "",
     "error": ""
 }
-`
+```
 
 然後能通過以下命令來確認是否rule新增成功。
 ```bash
@@ -278,7 +278,7 @@ curl --location 'http://localhost:3100/loki/api/v1/rules/tenant1' \
 ```
 
 會取得這樣樣回傳結果
-`
+```yaml
 tenant1:
     - name: nginx_rules
       interval: 5s
@@ -289,7 +289,7 @@ tenant1:
           expr: "10"
           labels:
             soure: static
-`
+```
 
 接著來到 Prometheus WebUI 就能看到剛剛新增的兩個指標了`nginx:status_total:count1m`與`scalar`。這樣我們就能進行最早的實驗。執行以下wrk命令來產生大量對nginx的請求。
 `wrk -t12 -c400 -d30s -s wrk_nginx_script.lua http://localhost:8000`
