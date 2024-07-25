@@ -14,7 +14,7 @@ Grafana 雖然能設定直接對 Loki 設置 Alerting，每隔幾秒鐘就會去
 ![](/ch10/loki_ruler/img/logql_to_metric.bmp)
 
 LogQL 如下︰
-`sum by (status) (count_over_time({job="fluentbit"} | json  | line_format "{{.log}} {{.container_name}}" | pattern `<ip> - - <_> "<method> <uri> <_>" <status> <size> <_> "<agent>" <_>` [1m]))`
+>sum by (status) (count_over_time({job="fluentbit"} | json  | line_format "{{.log}} {{.container_name}}" | pattern `<ip> - - <_> "<method> <uri> <_>" <status> <size> <_> "<agent>" <_>` [1m]))
 
 通過 `wrk` 來壓測執行看看，觀察一下容易的資源使用情況。
 `wrk -t12 -c500 -d30s -s wrk_script.lua http://localhost:3101`
