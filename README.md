@@ -55,6 +55,9 @@ Ch 5
 Ch 7
 - [OTel Collector - Filter Processor 的用法很多種？](/ch7/filter_processor.md)
 
+Ch 10
+- [Loki Ruler](/ch10/loki_ruler/loki_ruler.md)
+
 Ch13 的目錄中，還有作者最近閱讀 k6 Blog 整理出來的筆記供讀者參考參考。
 
 - [k6 Best Practices and Guidelines](/ch13/k6%20Best%20practices%20and%20guidelines.md)
