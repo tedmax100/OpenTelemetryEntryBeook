@@ -24,7 +24,7 @@ schema_config:
 common:
   path_prefix: /loki
   replication_factor: 1
-  compactor_address: http://backend:3100
+  compactor_address: http://loki_backend:3100
   storage:
     s3:
       endpoint: minio:9000
