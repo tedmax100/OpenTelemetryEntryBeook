@@ -1,0 +1,6 @@
+groups:
+  - name: nginx_rules
+    interval: 10s
+    rules:
+      - expr: sum by (status) (count_over_time({job="fluentbit"} | json  | line_format "{{.log}} {{.container_name}}" | pattern `<ip> - - <_> "<method> <uri> <_>" <status> <size> <_> "<agent>" <_>` [1m]))
+        record: nginx:status_total:count1m
