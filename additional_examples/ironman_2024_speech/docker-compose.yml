@@ -12,28 +12,61 @@ networks:
     driver: bridge
 
 services:
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib
+  fluentd:
+    image: fluent/fluent-bit
     volumes:
-      - ./infrastructure/otelcollector/otel-collector-config.yml:/etc/otelcol-contrib/config.yaml
+        - ./infrastructure/fluentbit:/fluent-bit/etc
     ports:
-      #- 1888:1888 # pprof extension
-      - 8888:8888 # Prometheus metrics exposed by the Collector
-      - 8889:8889 # Prometheus exporter metrics
-      - 13133:13133 # health_check extension
-      - 4317:4317 # OTLP gRPC receiver
-      #- 4318:4318 # OTLP http receiver
-      - 55679:55679 # zpages extension
+      - "24224:24224"
+      - "24224:24224/udp"
+    hostname: fluentd
+    depends_on:
+      - loki
+  # Grafana
+  grafana:
+    image: grafana/grafana:11.0.0
+    container_name: grafana
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - "GF_INSTALL_PLUGINS=grafana-googlesheets-datasource"
+    ports:
+      - "8300:3000"
+
+
+  # OpenTelemetry Collector
+  otelcol:
+    image: ${COLLECTOR_CONTRIB_IMAGE}
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+    restart: unless-stopped
+    command: [ "--config=/etc/otelcol-config.yml" ]
+    volumes:
+      - ./infrastructure/otelcollector/otelcol-config.yml:/etc/otelcol-config.yml
+    ports:
+      - "4317:${OTEL_COLLECTOR_PORT_GRPC}"
+      - "4318:${OTEL_COLLECTOR_PORT_HTTP}"
+    depends_on:
+      - tempo
+    logging: *logging
 
   # Loki
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:2.9.0
     container_name: loki
-    command: -config.file=/etc/loki/local-config.yml
+    command: -config.file=/etc/loki/local-config.yml -config.expand-env=true
     volumes:
       - ./infrastructure/loki/loki.yml:/etc/loki/local-config.yml
     ports:
       - "3100:3100"
+
 
   # Tempo
   tempo:
@@ -46,17 +79,76 @@ services:
       - "14268:14268"  # jaeger ingest
       - "3200:3200"   # tempo
       - "4327:4317"  # otlp grpc
-      - "4328:4318"  # otlp http
-  
-  # internal_service
-  internal_service:
-    container_name: internal_service
-    build:
-      context: ./internal_service
-      dockerfile: dockerfile
+      #- "4328:4318"  # otlp http
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:management-alpine
+    container_name: rabbitmq
+    deploy:
+      resources:
+        limits:
+          memory: 500M
+    restart: unless-stopped
     environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4318
-      - OTEL_NODE_RESOURCE_DETECTORS=env,host
+      RABBITMQ_DEFAULT_USER: demo
+      RABBITMQ_DEFAULT_PASS: demo
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics" ,"-q", "ping"]
+      timeout: 10s
+      retries: 12
     ports:
-      - 3000:3000 # for echo_service
-    restart: always
+      - "15672:15672"
+      - "5672:5672"
+    logging: *logging
+
+  # # api
+  # api:
+  #   container_name: api
+  #   build:
+  #     context: ./services/api
+  #     dockerfile: dockerfile
+  #   # environment:
+  #   ports:
+  #     - 8080:8080
+  #   restart: always
+  #   depends_on:
+  #     - otelcol
+  #     - rabbitmq
+  #   extra_hosts:
+  #     - "host.docker.internal:192.168.1.100"
+
+  # # Worker
+  # worker:
+  #   container_name: worker
+  #   build:
+  #     context: ./services/worker
+  #     dockerfile: dockerfile
+  #   # environment:
+  #   restart: always
+  #   depends_on:
+  #     - otelcol
+  #     - rabbitmq
+
+  # # internal_service
+  # internal_service:
+  #   container_name: internal_service
+  #   build:
+  #     context: ./services/internal_service
+  #     dockerfile: dockerfile
+  #   environment:
+  #     - OTEL_TRACES_EXPORTER=otlp
+  #     #- OTEL_LOGS_EXPORTER=otlp
+  #     - OTEL_EXPORTER_OTLP_ENDPOINT=http://otelcol:4318
+  #     - OTEL_NODE_RESOURCE_DETECTORS=all
+  #     - OTEL_SERVICE_NAME=internal_service
+  #     - OTEL_PROPAGATORS=tracecontext,baggage
+  #     #- NODE_OPTIONS=--require @opentelemetry/auto-instrumentations-node/register
+  #     - OTEL_NODE_ENABLED_INSTRUMENTATIONS=http,express
+  #   ports:
+  #     - 3000:3000 # for echo_service
+  #   restart: always
+  #   depends_on:
+  #     - otelcol
+  #     - rabbitmq
+  

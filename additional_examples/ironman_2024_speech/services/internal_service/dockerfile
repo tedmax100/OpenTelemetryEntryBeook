@@ -1,0 +1,13 @@
+FROM node:22 AS base-image
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+# ENV NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
+
+CMD ["node", "--require", "@opentelemetry/auto-instrumentations-node/register", "index.js"]

@@ -1,9 +1,12 @@
-go 1.21.1
+go 1.22.3
 
 use (
+	./ch11/app
 	./ch6/exemplar
 	./ch6/trace
 	./ch7/app
 	./ch7/other_app
-	./ch11/app
+	./additional_examples/ironman_2024_speech/api
+	./additional_examples/ironman_2024_speech/worker
+	./additional_examples/ironman_2024_speech/internal_service
 )
