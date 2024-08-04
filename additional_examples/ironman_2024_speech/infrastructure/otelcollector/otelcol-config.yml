@@ -1,0 +1,54 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+        cors:
+          allowed_origins:
+            - "http://*"
+            - "https://*"
+  rabbitmq:
+    endpoint: http://rabbitmq:15672
+    username: demo
+    password: demo
+    collection_interval: 10s
+
+exporters:
+  debug:
+  otlp:
+    endpoint: "tempo:4317"
+    tls:
+      insecure: true
+  loki:
+    endpoint: "http://loki:3100/loki/api/v1/push"
+
+processors:
+  batch:
+    send_batch_size: 50
+    timeout: 5s
+  memory_limiter:
+    check_interval: 2s
+    limit_mib: 1800
+    spike_limit_mib: 500
+
+
+connectors:
+  spanmetrics:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp, debug]
+    metrics:
+      receivers: [otlp, rabbitmq]
+      processors: [batch]
+      exporters: [debug]
+    logs:
+      receivers: [otlp]
+      processors: [batch ]
+      exporters: [ loki, debug]
