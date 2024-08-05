@@ -1,4 +1,3 @@
-version: '3.9'
 x-default-logging: &logging
   driver: "fluentd"
   options:
@@ -7,13 +6,13 @@ x-default-logging: &logging
     tag: "{{.Name}}"
 
 networks:
-  default:
-    name: ironman-demo
+  demo:
+    name: demo
     driver: bridge
 
 services:
   fluentd:
-    image: fluent/fluent-bit
+    image: fluent/fluent-bit:3.1-debug
     volumes:
         - ./infrastructure/fluentbit:/fluent-bit/etc
     ports:
@@ -21,7 +20,9 @@ services:
       - "24224:24224/udp"
     hostname: fluentd
     depends_on:
-      - loki
+      - otelcol
+    networks:
+      - demo
   # Grafana
   grafana:
     image: grafana/grafana:11.0.0
@@ -37,11 +38,13 @@ services:
       - "GF_INSTALL_PLUGINS=grafana-googlesheets-datasource"
     ports:
       - "8300:3000"
-
+    networks:
+      - demo
 
   # OpenTelemetry Collector
   otelcol:
-    image: ${COLLECTOR_CONTRIB_IMAGE}
+    image: otel/opentelemetry-collector-contrib:0.106.1
+    container_name: otelcol
     deploy:
       resources:
         limits:
@@ -51,11 +54,18 @@ services:
     volumes:
       - ./infrastructure/otelcollector/otelcol-config.yml:/etc/otelcol-config.yml
     ports:
-      - "4317:${OTEL_COLLECTOR_PORT_GRPC}"
-      - "4318:${OTEL_COLLECTOR_PORT_HTTP}"
+      - "4317:4317"
+      - "4318:4318"
+      - "13133:13133" # health_check extension
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:13133/"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
     depends_on:
       - tempo
-    logging: *logging
+    networks:
+      - demo
 
   # Loki
   loki:
@@ -66,7 +76,8 @@ services:
       - ./infrastructure/loki/loki.yml:/etc/loki/local-config.yml
     ports:
       - "3100:3100"
-
+    networks:
+      - demo
 
   # Tempo
   tempo:
@@ -80,7 +91,9 @@ services:
       - "3200:3200"   # tempo
       - "4327:4317"  # otlp grpc
       #- "4328:4318"  # otlp http
-
+    networks:
+      - demo
+      
   # RabbitMQ
   rabbitmq:
     image: rabbitmq:management-alpine
@@ -95,12 +108,25 @@ services:
       RABBITMQ_DEFAULT_PASS: demo
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics" ,"-q", "ping"]
-      timeout: 10s
+      timeout: 3s
       retries: 12
     ports:
       - "15672:15672"
       - "5672:5672"
+    networks:
+      - demo
+
+  proxy:
+    image: nginx:1.27.0-otel
+    container_name: proxy
+    restart: unless-stopped
+    volumes:
+      - ./infrastructure/nginx/default.conf:/etc/nginx/nginx.conf
+    ports:
+      - 8001:80
     logging: *logging
+    networks:
+      - demo
 
   # # api
   # api:
