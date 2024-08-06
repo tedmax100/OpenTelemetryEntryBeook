@@ -13,6 +13,13 @@ datasources:
     jsonData:
       nodeGraph:
         enabled: true
+      tracesToLogsV2:
+        datasourceUid: 'loki'
+        tags: 
+          - key: app
+        filterByTraceID: true
+        spanEndTimeShift: 5m
+        spanStartTimeShift: '-5m'
       serviceMap:
         httpMethod: GET
         datasourceUid: 'prometheus'
@@ -41,3 +48,8 @@ datasources:
     uid: prometheus
     url: http://prometheus:9090
     editable: true
+    jsonData:
+        httpMethod: GET
+        exemplarTraceIdDestinations:
+          - name: traceID
+            datasourceUid: tempo

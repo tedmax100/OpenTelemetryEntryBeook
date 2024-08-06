@@ -51,7 +51,6 @@ func newResource(ctx context.Context, serviceName string) *resource.Resource {
 		resource.WithContainer(),
 		resource.WithOS(),
 		resource.WithProcessRuntimeVersion(),
-		resource.WithContainer(),
 		resource.WithTelemetrySDK(),
 		resource.WithProcessCommandArgs(),
 		resource.WithAttributes(

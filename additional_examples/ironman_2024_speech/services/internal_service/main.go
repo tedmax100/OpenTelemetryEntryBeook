@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"net/http"
 	"os"
@@ -9,12 +11,15 @@ import (
 
 	otel "demo/internal/otel"
 
+	"math/rand"
+
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/codes"
 )
 
 var SERVICE_NAME = "internal-service"
@@ -37,6 +42,18 @@ func main() {
 		for _, member := range bagMsg.Members() {
 			// baggageItems[member.Key()] = member.Value()
 			span.SetAttributes(attribute.String(member.Key(), member.Value()))
+		}
+
+		rand.Seed(time.Now().UnixNano())
+		randomValue := rand.Intn(10)
+
+		if randomValue < 3 {
+			span.SetStatus(codes.Error, "random error occurred")
+			otel.SpanSetError(span, errors.New("random error"))
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "random error occurred",
+			})
+			return
 		}
 
 		otel.SpanSetOk(span, "")

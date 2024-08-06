@@ -1,10 +1,15 @@
-.PHONY: node-start
-node-start:
-	cd internal_service && export OTEL_TRACES_EXPORTER="otlp" && \
-	export OTEL_PROPAGATORS="tracecontext,baggage" && \
-	export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"  && \
-	export OTEL_NODE_RESOURCE_DETECTORS="env,host,os" && \
-	export OTEL_SERVICE_NAME="internal_service" && \
-	export NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register" && \
-	node index.js
+.PHONY: build
+build:
+	docker compose build --no-cache --progress=plain
 
+.PHONY: run
+run:
+	docker compose up -d
+
+.PHONY: stop
+stop:
+	docker compose down
+
+.PHONY: load_test
+load_test:
+	wrk -d30s -c50 http://localhost:8079/hello

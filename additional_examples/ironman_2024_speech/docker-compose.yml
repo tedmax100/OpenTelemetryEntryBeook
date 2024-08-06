@@ -77,7 +77,36 @@ services:
       #- "4328:4318"  # otlp http
     networks:
       - demo
-      
+
+  # Prometheus
+  prometheus:
+    image: quay.io/prometheus/prometheus:v2.53.1
+    container_name: prometheus
+    command:
+      - --web.console.templates=/etc/prometheus/consoles
+      - --web.console.libraries=/etc/prometheus/console_libraries
+      - --storage.tsdb.retention.time=1h
+      - --config.file=/etc/prometheus/prometheus-config.yaml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+      - --web.route-prefix=/
+      - --enable-feature=exemplar-storage
+      - --enable-feature=otlp-write-receiver
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --enable-feature=remote-write-receiver
+    volumes:
+      - ./infrastructure/prometheus/prometheus-config.yaml:/etc/prometheus/prometheus-config.yaml
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    networks:
+      - demo
+
   # RabbitMQ
   rabbitmq:
     image: rabbitmq:management-alpine
@@ -100,17 +129,16 @@ services:
     networks:
       - demo
 
-  proxy:
-    image: nginx:1.27.0-otel
-    container_name: proxy
-    restart: unless-stopped
-    volumes:
-      - ./infrastructure/nginx/default.conf:/etc/nginx/nginx.conf
-    ports:
-      - 8001:80
-    logging: *logging
-    networks:
-      - demo
+  # proxy:
+  #   image: nginx:1.27.0-otel
+  #   container_name: proxy
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./infrastructure/nginx/default.conf:/etc/nginx/nginx.conf
+  #   ports:
+  #     - 8001:80
+  #   networks:
+  #     - demo
 
   # api
   api:
@@ -120,13 +148,28 @@ services:
       dockerfile: ./api/dockerfile
     # environment:
     ports:
-      - 8080:8080
+      - 8079:8080
     restart: always
     depends_on:
       - otelcol
       - rabbitmq
     networks:
       - demo
+
+  # api2:
+  #   container_name: api2
+  #   build:
+  #     context: ./services
+  #     dockerfile: ./api/dockerfile
+  #   # environment:
+  #   ports:
+  #     - 8080:8080
+  #   restart: always
+  #   depends_on:
+  #     - otelcol
+  #     - rabbitmq
+  #   networks:
+  #     - demo
     # extra_hosts:
     #   - "host.docker.internal:192.168.1.100"
 
@@ -155,3 +198,4 @@ services:
       - otelcol
     networks:
       - demo
+  

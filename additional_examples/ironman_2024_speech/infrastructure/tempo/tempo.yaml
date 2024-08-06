@@ -34,3 +34,24 @@ storage:
     local:
       path: /tmp/tempo/blocks
 
+
+metrics_generator:
+  processor:
+    span_metrics:
+      dimensions:
+        - http.method
+        - http.target
+  registry:
+    external_labels:
+      source: tempo
+      cluster: docker-compose
+  storage:
+    path: /tmp/tempo/generator/wal
+    remote_write:
+      - url: http://prometheus:9090/api/v1/write
+        send_exemplars: true
+
+overrides:
+  defaults:
+    metrics_generator:
+      processors: [service-graphs, span-metrics] # enables metrics generator
