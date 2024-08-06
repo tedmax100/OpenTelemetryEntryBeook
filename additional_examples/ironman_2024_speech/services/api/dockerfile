@@ -5,10 +5,10 @@ WORKDIR /demo
 COPY . .
 RUN go mod download
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o app
+RUN CGO_ENABLED=0 GOOS=linux go build ./api/main.go
 
-RUN chmod +x ./app
+RUN chmod +x ./main
 
 EXPOSE 8080
 
-CMD ["./app"]
+CMD ["./main"]

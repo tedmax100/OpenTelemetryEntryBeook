@@ -36,6 +36,8 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       - GF_AUTH_DISABLE_LOGIN_FORM=true
       - "GF_INSTALL_PLUGINS=grafana-googlesheets-datasource"
+    volumes:
+      - ./infrastructure/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
     ports:
       - "8300:3000"
     networks:
@@ -43,7 +45,7 @@ services:
 
   # OpenTelemetry Collector
   otelcol:
-    image: otel/opentelemetry-collector-contrib:0.106.1
+    image: otel/opentelemetry-collector-contrib:0.100.0
     container_name: otelcol
     deploy:
       resources:
@@ -56,26 +58,8 @@ services:
     ports:
       - "4317:4317"
       - "4318:4318"
-      - "13133:13133" # health_check extension
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:13133/"]
-      interval: 5s
-      timeout: 10s
-      retries: 10
     depends_on:
       - tempo
-    networks:
-      - demo
-
-  # Loki
-  loki:
-    image: grafana/loki:2.9.0
-    container_name: loki
-    command: -config.file=/etc/loki/local-config.yml -config.expand-env=true
-    volumes:
-      - ./infrastructure/loki/loki.yml:/etc/loki/local-config.yml
-    ports:
-      - "3100:3100"
     networks:
       - demo
 
@@ -128,21 +112,23 @@ services:
     networks:
       - demo
 
-  # # api
-  # api:
-  #   container_name: api
-  #   build:
-  #     context: ./services/api
-  #     dockerfile: dockerfile
-  #   # environment:
-  #   ports:
-  #     - 8080:8080
-  #   restart: always
-  #   depends_on:
-  #     - otelcol
-  #     - rabbitmq
-  #   extra_hosts:
-  #     - "host.docker.internal:192.168.1.100"
+  # api
+  api:
+    container_name: api
+    build:
+      context: ./services
+      dockerfile: ./api/dockerfile
+    # environment:
+    ports:
+      - 8080:8080
+    restart: always
+    depends_on:
+      - otelcol
+      - rabbitmq
+    networks:
+      - demo
+    # extra_hosts:
+    #   - "host.docker.internal:192.168.1.100"
 
   # # Worker
   # worker:
@@ -156,25 +142,16 @@ services:
   #     - otelcol
   #     - rabbitmq
 
-  # # internal_service
-  # internal_service:
-  #   container_name: internal_service
-  #   build:
-  #     context: ./services/internal_service
-  #     dockerfile: dockerfile
-  #   environment:
-  #     - OTEL_TRACES_EXPORTER=otlp
-  #     #- OTEL_LOGS_EXPORTER=otlp
-  #     - OTEL_EXPORTER_OTLP_ENDPOINT=http://otelcol:4318
-  #     - OTEL_NODE_RESOURCE_DETECTORS=all
-  #     - OTEL_SERVICE_NAME=internal_service
-  #     - OTEL_PROPAGATORS=tracecontext,baggage
-  #     #- NODE_OPTIONS=--require @opentelemetry/auto-instrumentations-node/register
-  #     - OTEL_NODE_ENABLED_INSTRUMENTATIONS=http,express
-  #   ports:
-  #     - 3000:3000 # for echo_service
-  #   restart: always
-  #   depends_on:
-  #     - otelcol
-  #     - rabbitmq
-  
+  # internal_service
+  internal_service:
+    container_name: internal_service
+    build:
+      context: ./services
+      dockerfile: ./internal_service/dockerfile
+    ports:
+      - 8081:8080 # for echo_service
+    restart: always
+    depends_on:
+      - otelcol
+    networks:
+      - demo

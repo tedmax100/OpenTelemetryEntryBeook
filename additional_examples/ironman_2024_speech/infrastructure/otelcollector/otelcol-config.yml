@@ -1,3 +1,6 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+
 receivers:
   otlp:
     protocols:
@@ -12,37 +15,51 @@ receivers:
 
 exporters:
   debug:
-    verbosity: detailed
   otlp:
     endpoint: "tempo:4317"
+    tls:
+      insecure: true
+  otlphttp/prometheus:
+    endpoint: "http://prometheus:9090/api/v1/otlp"
     tls:
       insecure: true
   loki:
     endpoint: "http://loki:3100/loki/api/v1/push"
 
 processors:
-  resourcedetection:
-    detectors: [system]
   batch:
     send_batch_size: 50
     timeout: 5s
+  memory_limiter:
+    check_interval: 2s
+    limit_mib: 1800
+    spike_limit_mib: 500
 
-extensions:
-  health_check:
-      endpoint: :13133
+
+  attributes:
+    actions:
+      - action: insert
+        key: loki.attribute.labels
+        value:  service
+      - action: insert
+        key: loki.format
+        value: raw
+
+
+connectors:
+  spanmetrics:
 
 service:
-  extensions: [health_check]
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [batch]
-      exporters: [ debug]
+      processors: []
+      exporters: [ debug, otlp, spanmetrics]
     metrics:
-      receivers: [otlp]
-      processors: [resourcedetection, batch]
-      exporters: [debug]
+      receivers: [otlp, spanmetrics]
+      processors: [batch]
+      exporters: [otlphttp/prometheus, debug]
     logs:
       receivers: [otlp]
-      processors: [batch ]
-      exporters: [ loki, debug]
+      processors: [attributes]
+      exporters: [loki,  debug]

@@ -2,7 +2,8 @@ package otel
 
 import (
 	"context"
-	"log/slog"
+	"fmt"
+	"log"
 	"os"
 
 	"go.opentelemetry.io/otel"
@@ -14,44 +15,20 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func InitOtel(ctx context.Context, serviceName string, collectorTarget string, logger *slog.Logger) {
-	conn, err := grpc.NewClient(collectorTarget,
-		// Note the use of insecure transport here. TLS is recommended in production.
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
+func InitOtel(ctx context.Context, serviceName string) {
+	conn, err := initConn()
 	if err != nil {
-		logger.Error("failed to create gRPC connection to collector", slog.Any("error", err))
+		log.Fatal("failed to create gRPC connection to collector")
 		os.Exit(1)
 	}
 
-	serviceSemconv := semconv.ServiceNameKey.String(serviceName)
-
-	res, err := resource.New(ctx,
-		resource.WithContainer(),
-		resource.WithOS(),
-		resource.WithContainerID(),
-		resource.WithTelemetrySDK(),
-		resource.WithProcessCommandArgs(),
-		resource.WithAttributes(
-			// The service name used to display traces in backends
-			serviceSemconv,
-		),
-	)
+	res := newResource(ctx, serviceName)
+	_, err = initTracerProvider(ctx, res, conn)
 	if err != nil {
-		logger.Error("failed to new resource", slog.Any("error", err))
+		//logger.Error("failed to initTracerProvider", slog.Any("error", err))
 		os.Exit(1)
 	}
 
-	shutdownTracerProvider, err := initTracerProvider(ctx, res, conn)
-	if err != nil {
-		logger.Error("failed to initTracerProvider", slog.Any("error", err))
-		os.Exit(1)
-	}
-	defer func() {
-		if err := shutdownTracerProvider(ctx); err != nil {
-			logger.Error("failed to shutdown TracerProvider", slog.Any("error", err))
-		}
-	}()
 }
 
 func GetTracer(name string) trace.Tracer {
@@ -64,4 +41,47 @@ func SpanSetError(span trace.Span, err error) {
 
 func SpanSetOk(span trace.Span, description string) {
 	span.SetStatus(codes.Ok, description)
+}
+
+func newResource(ctx context.Context, serviceName string) *resource.Resource {
+	hostName, _ := os.Hostname()
+	//serviceSemconv := semconv.ServiceNameKey.String(serviceName)
+
+	res, err := resource.New(ctx,
+		resource.WithContainer(),
+		resource.WithOS(),
+		resource.WithProcessRuntimeVersion(),
+		resource.WithContainer(),
+		resource.WithTelemetrySDK(),
+		resource.WithProcessCommandArgs(),
+		resource.WithAttributes(
+			// The service name used to display traces in backends
+			//serviceSemconv,
+			semconv.ServiceNameKey.String(serviceName),
+			semconv.ServiceVersion("1.0.0"),
+			semconv.HostName(hostName),
+		),
+	)
+	if err != nil {
+		//logger.Error("failed to new resource", slog.Any("error", err))
+		os.Exit(1)
+	}
+
+	return res
+}
+
+// Initialize a gRPC connection to be used by both the tracer and meter
+// providers.
+func initConn() (*grpc.ClientConn, error) {
+	// It connects the OpenTelemetry Collector through local gRPC connection.
+	// You may replace `localhost:4317` with your endpoint.
+	conn, err := grpc.NewClient("otelcol:4317",
+		// Note the use of insecure transport here. TLS is recommended in production.
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gRPC connection to collector: %w", err)
+	}
+
+	return conn, err
 }

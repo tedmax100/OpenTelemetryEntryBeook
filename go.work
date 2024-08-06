@@ -6,7 +6,5 @@ use (
 	./ch6/trace
 	./ch7/app
 	./ch7/other_app
-	./additional_examples/ironman_2024_speech/api
-	./additional_examples/ironman_2024_speech/worker
-	./additional_examples/ironman_2024_speech/internal_service
+	./additional_examples/ironman_2024_speech/services
 )

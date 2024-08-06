@@ -2,16 +2,19 @@ package main
 
 import (
 	"context"
+
+	//"context"
 	"errors"
 	"flag"
-	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
-	sloggin "github.com/samber/slog-gin"
+	//"go.opentelemetry.io/otel/sdk/log"
+
+	//sloggin "github.com/samber/slog-gin"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
@@ -20,18 +23,18 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
-	logger "demo/internal/logger"
 	otel "demo/internal/otel"
 
+	//"log"
+
 	"go.opentelemetry.io/otel/baggage"
-	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 )
 
-var serviceName = semconv.ServiceNameKey.String("api-server")
+var SERVICE_NAME = "api-server"
 var conn *grpc.ClientConn
 
 var (
-	uri          = flag.String("uri", "amqp://guest:guest@localhost:5672/", "AMQP URI")
+	uri          = flag.String("uri", "amqp://guest:guest@rabbitmq:5672/", "AMQP URI")
 	exchange     = flag.String("exchange", "test-exchange", "Durable AMQP exchange name")
 	exchangeType = flag.String("exchange-type", "direct", "Exchange type - direct|fanout|topic|x-custom")
 	queue        = flag.String("queue", "test-queue", "Ephemeral AMQP queue name")
@@ -40,37 +43,30 @@ var (
 	continuous   = flag.Bool("continuous", false, "Keep publishing messages at a 1msg/sec rate")
 )
 
-var _logger *slog.Logger
-
-func init() {
-	_logger = logger.GetLogger().With("gin_mode", gin.EnvGinMode).With("service", "api")
-}
-
 func main() {
-	_logger.InfoContext(context.Background(), "init grpc connection...")
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	otel.InitOtel(ctx, "api", "otelcol:4317", _logger)
+	otel.InitOtel(ctx, "serviceName")
+
+	//log.(context.Background(), "init grpc connection...")
 
 	r := gin.Default()
 	r.Use(otelgin.Middleware("api"))
-	config := sloggin.Config{
-		WithRequestID: true,
-		WithSpanID:    true,
-		WithTraceID:   true,
-	}
-	r.Use(sloggin.NewWithConfig(_logger, config))
+
+	//r.Use(sloggin.NewWithConfig(logger, config))
 
 	r.GET("/hello", func(c *gin.Context) {
 		tracer := otel.GetTracer("api-server")
 		ctx, span := tracer.Start(c.Request.Context(), "hello")
-		defer span.End()
+		defer func() {
+			span.End()
+		}()
 
 		member, err := baggage.NewMember("user", "nathan")
 		if err != nil {
-			_logger.Error("failed to NewMember", slog.Any("error", err))
+			//_logger.ErrorContext(ctx, "failed to NewMember", slog.Any("error", err))
 			otel.SpanSetError(span, err)
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": err.Error(),
@@ -79,7 +75,7 @@ func main() {
 		}
 		bag, err := baggage.New(member)
 		if err != nil {
-			_logger.Error("failed to create baggage", slog.Any("error", err))
+			//_logger.ErrorContext(ctx, "failed to create baggage", slog.Any("error", err))
 			otel.SpanSetError(span, err)
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": err.Error(),
@@ -90,9 +86,9 @@ func main() {
 		client := http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 
 		ctx = baggage.ContextWithBaggage(ctx, bag)
-		req, err := http.NewRequestWithContext(ctx, "GET", "http://internal_service:3000/echo?message=Hello_Nathan", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", "http://internal_service:8080/echo?message=Hello_Nathan", nil)
 		if err != nil {
-			_logger.Error("failed to create a request", slog.Any("error", err))
+			//_logger.ErrorContext(ctx, "failed to create a request", slog.Any("error", err))
 			otel.SpanSetError(span, err)
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": err.Error(),
@@ -103,9 +99,9 @@ func main() {
 		if err != nil {
 			var opErr *net.OpError
 			if errors.As(err, &opErr) {
-				_logger.Error("failed to link to server", slog.Any("error", err))
+				//_logger.ErrorContext(ctx, "failed to link to server", slog.Any("error", err))
 			} else {
-				_logger.Error("failed to request to echo", slog.Any("error", err))
+				//_logger.Error("failed to request to echo", slog.Any("error", err))
 			}
 
 			otel.SpanSetError(span, err)
