@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"flag"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
+	"demo/internal/amqp"
 	otel "demo/internal/otel"
 
 	"go.opentelemetry.io/otel/baggage"
@@ -40,6 +42,13 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
+	channel, deferFuncs, err := amqp.NewAqmpConn("amqp://demo:demo@localhost:5672/", SERVICE_NAME)
+	if err != nil {
+		for _, deferFunc := range deferFuncs {
+			deferFunc()
+		}
+		log.Fatal(err)
+	}
 	otel.InitOtel(ctx, SERVICE_NAME)
 
 	r := gin.Default()
@@ -55,7 +64,7 @@ func main() {
 		member, err := baggage.NewMember("user", "nathan")
 		if err != nil {
 			otel.SpanSetError(span, err)
-			c.JSON(http.StatusBadRequest, gin.H{
+			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": err.Error(),
 			})
 			return
@@ -63,7 +72,7 @@ func main() {
 		bag, err := baggage.New(member)
 		if err != nil {
 			otel.SpanSetError(span, err)
-			c.JSON(http.StatusBadRequest, gin.H{
+			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": err.Error(),
 			})
 			return
@@ -95,6 +104,15 @@ func main() {
 
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": fmt.Sprintf("unexpected status code: %d", res.StatusCode),
+			})
+			return
+		}
+
+		err = amqp.PublishWithCtx(ctx, channel, "demo")
+		if err != nil {
+			otel.SpanSetError(span, err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
 			})
 			return
 		}
