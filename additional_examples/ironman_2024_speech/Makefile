@@ -5,6 +5,9 @@ build:
 .PHONY: run
 run:
 	docker compose up -d
+	@echo ""
+	@echo "OpenTelemetry Demo is running."
+	@echo "Go to http://localhost:8300 for the Grafana UI."
 
 .PHONY: stop
 stop:
