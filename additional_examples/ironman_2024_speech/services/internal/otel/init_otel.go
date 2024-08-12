@@ -8,6 +8,7 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 	"go.opentelemetry.io/otel/trace"
@@ -29,10 +30,19 @@ func InitOtel(ctx context.Context, serviceName string) {
 		os.Exit(1)
 	}
 
+	_, err = initMetricProvider(ctx, res, conn)
+	if err != nil {
+		//logger.Error("failed to initTracerProvider", slog.Any("error", err))
+		os.Exit(1)
+	}
 }
 
 func GetTracer(name string) trace.Tracer {
 	return otel.Tracer(name)
+}
+
+func GetMeter(name string) metric.Meter {
+	return otel.Meter(name)
 }
 
 func SpanSetError(span trace.Span, err error) {
@@ -54,8 +64,6 @@ func newResource(ctx context.Context, serviceName string) *resource.Resource {
 		resource.WithTelemetrySDK(),
 		resource.WithProcessCommandArgs(),
 		resource.WithAttributes(
-			// The service name used to display traces in backends
-			//serviceSemconv,
 			semconv.ServiceNameKey.String(serviceName),
 			semconv.ServiceVersion("1.0.0"),
 			semconv.HostName(hostName),

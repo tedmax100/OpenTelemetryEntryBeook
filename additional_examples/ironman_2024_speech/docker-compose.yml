@@ -60,6 +60,7 @@ services:
       - "4318:4318"
     depends_on:
       - tempo
+      - prometheus
     networks:
       - demo
 
@@ -156,34 +157,20 @@ services:
     networks:
       - demo
 
-  # api2:
-  #   container_name: api2
-  #   build:
-  #     context: ./services
-  #     dockerfile: ./api/dockerfile
-  #   # environment:
-  #   ports:
-  #     - 8080:8080
-  #   restart: always
-  #   depends_on:
-  #     - otelcol
-  #     - rabbitmq
-  #   networks:
-  #     - demo
-    # extra_hosts:
-    #   - "host.docker.internal:192.168.1.100"
-
   # # Worker
-  # worker:
-  #   container_name: worker
-  #   build:
-  #     context: ./services/worker
-  #     dockerfile: dockerfile
-  #   # environment:
-  #   restart: always
-  #   depends_on:
-  #     - otelcol
-  #     - rabbitmq
+  worker:
+    container_name: worker
+    build:
+      context: ./services
+      dockerfile: ./worker/dockerfile
+    # environment:
+    restart: always
+    depends_on:
+      - otelcol
+      - rabbitmq
+    networks:
+      - demo
+  
 
   # internal_service
   internal_service:

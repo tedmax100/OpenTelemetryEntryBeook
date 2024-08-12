@@ -4,45 +4,36 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
-	"flag"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/gin-gonic/gin"
-	"google.golang.org/grpc"
-
-	//amqp "github.com/rabbitmq/amqp091-go"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"demo/internal/amqp"
 	otel "demo/internal/otel"
 
+	"go.opentelemetry.io/otel/attribute"
+
+	"math/rand"
+
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/metric"
 )
 
 var SERVICE_NAME = "api-server"
-var conn *grpc.ClientConn
-
-var (
-	uri          = flag.String("uri", "amqp://guest:guest@rabbitmq:5672/", "AMQP URI")
-	exchange     = flag.String("exchange", "test-exchange", "Durable AMQP exchange name")
-	exchangeType = flag.String("exchange-type", "direct", "Exchange type - direct|fanout|topic|x-custom")
-	queue        = flag.String("queue", "test-queue", "Ephemeral AMQP queue name")
-	routingKey   = flag.String("key", "test-key", "AMQP routing key")
-	body         = flag.String("body", "foobar", "Body of message")
-	continuous   = flag.Bool("continuous", false, "Keep publishing messages at a 1msg/sec rate")
-)
 
 func main() {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	channel, deferFuncs, err := amqp.NewAqmpConn("amqp://demo:demo@localhost:5672/", SERVICE_NAME)
+	channel, deferFuncs, err := amqp.NewAqmpConn("amqp://demo:demo@rabbitmq:5672/", SERVICE_NAME)
 	if err != nil {
 		for _, deferFunc := range deferFuncs {
 			deferFunc()
@@ -52,10 +43,22 @@ func main() {
 	otel.InitOtel(ctx, SERVICE_NAME)
 
 	r := gin.Default()
-	r.Use(otelgin.Middleware("api"))
+	r.Use(otelgin.Middleware(SERVICE_NAME))
+
+	meter := otel.GetMeter(SERVICE_NAME)
+	reqCount, err := meter.Int64Counter("request_total", metric.WithDescription("The number of access API"))
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	r.GET("/hello", func(c *gin.Context) {
-		tracer := otel.GetTracer("api-server")
+		commonAttrs := []attribute.KeyValue{
+			attribute.String("path", c.Request.RequestURI),
+			attribute.String("method", c.Request.Method),
+		}
+		reqCount.Add(ctx, 1, metric.WithAttributes(commonAttrs...))
+
+		tracer := otel.GetTracer(SERVICE_NAME)
 		ctx, span := tracer.Start(c.Request.Context(), "hello")
 		defer func() {
 			span.End()
@@ -77,6 +80,10 @@ func main() {
 			})
 			return
 		}
+
+		randomSleepValue := rand.Intn(50)
+
+		time.Sleep(time.Duration(randomSleepValue) * time.Millisecond)
 
 		client := http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 
@@ -107,8 +114,8 @@ func main() {
 			})
 			return
 		}
-
-		err = amqp.PublishWithCtx(ctx, channel, "demo")
+		headers := otel.InjectAMQPHeaders(ctx)
+		err = amqp.PublishWithCtx(ctx, channel, "demo", headers)
 		if err != nil {
 			otel.SpanSetError(span, err)
 			c.JSON(http.StatusInternalServerError, gin.H{

@@ -14,7 +14,6 @@ import (
 	"math/rand"
 
 	"github.com/gin-gonic/gin"
-	"google.golang.org/grpc"
 
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel/attribute"
@@ -23,7 +22,6 @@ import (
 )
 
 var SERVICE_NAME = "internal-service"
-var conn *grpc.ClientConn
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -32,7 +30,7 @@ func main() {
 	otel.InitOtel(ctx, SERVICE_NAME)
 
 	r := gin.Default()
-	r.Use(otelgin.Middleware("api"))
+	r.Use(otelgin.Middleware(SERVICE_NAME))
 	r.GET("/echo", func(c *gin.Context) {
 		tracer := otel.GetTracer(SERVICE_NAME)
 		_, span := tracer.Start(c.Request.Context(), c.HandlerName())
@@ -44,7 +42,10 @@ func main() {
 			span.SetAttributes(attribute.String(member.Key(), member.Value()))
 		}
 
-		rand.Seed(time.Now().UnixNano())
+		randomSleepValue := rand.Intn(100)
+
+		time.Sleep(time.Duration(randomSleepValue) * time.Millisecond)
+
 		randomValue := rand.Intn(10)
 
 		if randomValue < 3 {

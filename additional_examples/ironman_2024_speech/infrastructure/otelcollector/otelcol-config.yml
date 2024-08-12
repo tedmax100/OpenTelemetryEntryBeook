@@ -6,12 +6,6 @@ receivers:
     protocols:
       grpc:
         endpoint: 0.0.0.0:4317
-      http:
-        endpoint: 0.0.0.0:4318
-        cors:
-          allowed_origins:
-            - "http://*"
-            - "https://*"
 
 exporters:
   debug:
@@ -19,10 +13,13 @@ exporters:
     endpoint: "tempo:4317"
     tls:
       insecure: true
-  otlphttp/prometheus:
-    endpoint: "http://prometheus:9090/api/v1/otlp"
-    tls:
-      insecure: true
+  prometheus:
+    endpoint: 0.0.0.0:9090
+    namespace: demoapp
+    send_timestamps: true
+    resource_to_telemetry_conversion:
+      enabled: true
+      
   loki:
     endpoint: "http://loki:3100/loki/api/v1/push"
 
@@ -54,11 +51,11 @@ service:
     traces:
       receivers: [otlp]
       processors: []
-      exporters: [ debug, otlp, spanmetrics]
+      exporters: [ debug, otlp]
     metrics:
-      receivers: [otlp, spanmetrics]
-      processors: [batch]
-      exporters: [otlphttp/prometheus, debug]
+      receivers: [otlp]
+      processors: []
+      exporters: [prometheus, debug]
     logs:
       receivers: [otlp]
       processors: [attributes]

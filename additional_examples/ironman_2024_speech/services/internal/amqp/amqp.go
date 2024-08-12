@@ -48,7 +48,8 @@ func NewAqmpConn(uri, serviceName string) (*amqp.Channel, []func() error, error)
 	return ch, deferFuncs, nil
 }
 
-func PublishWithCtx(ctx context.Context, channel *amqp.Channel, body string) error {
+func PublishWithCtx(ctx context.Context, channel *amqp.Channel, body string, headers map[string]any) error {
+	log.Printf("%v", headers)
 	return channel.PublishWithContext(ctx,
 		"",     // exchange
 		"demo", // routing key
@@ -58,5 +59,6 @@ func PublishWithCtx(ctx context.Context, channel *amqp.Channel, body string) err
 			DeliveryMode: amqp.Persistent,
 			ContentType:  "text/plain",
 			Body:         []byte(body),
+			Headers:      headers,
 		})
 }
