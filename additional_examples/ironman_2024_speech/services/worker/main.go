@@ -19,6 +19,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var SERVICE_NAME = "worker"
@@ -65,7 +66,7 @@ func main() {
 				bagMsg := baggage.FromContext(workCtx)
 
 				tracer := otel.GetTracer(SERVICE_NAME)
-				_, workSpan := tracer.Start(workCtx, "work")
+				_, workSpan := tracer.Start(workCtx, "work", trace.WithSpanKind(trace.SpanKindConsumer))
 				for _, member := range bagMsg.Members() {
 					workSpan.SetAttributes(attribute.String(member.Key(), member.Value()))
 				}

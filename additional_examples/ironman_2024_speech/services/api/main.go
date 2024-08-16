@@ -17,6 +17,7 @@ import (
 	otel "demo/internal/otel"
 
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"math/rand"
 
@@ -114,8 +115,15 @@ func main() {
 			})
 			return
 		}
+
 		headers := otel.InjectAMQPHeaders(ctx)
-		err = amqp.PublishWithCtx(ctx, channel, "demo", headers)
+
+		pubCtx, pubSpan := tracer.Start(ctx, "publish event", trace.WithSpanKind(trace.SpanKindProducer))
+		defer func() {
+			pubSpan.End()
+		}()
+
+		err = amqp.PublishWithCtx(pubCtx, channel, "demo", headers)
 		if err != nil {
 			otel.SpanSetError(span, err)
 			c.JSON(http.StatusInternalServerError, gin.H{
