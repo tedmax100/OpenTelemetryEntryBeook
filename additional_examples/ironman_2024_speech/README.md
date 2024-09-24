@@ -6,6 +6,8 @@
 
 [投影片連結](https://docs.google.com/presentation/d/1uK2oTUFlgYBdZbAzV2hqQ3_z_vdXdRyq/edit?usp=sharing&ouid=103239762195549851238&rtpof=true&sd=true)
 
+[iThome 鐵人講堂連結](https://itplus.ithome.com.tw/webinar-page/234)
+
 ## 使用方式
 
 1. make build
