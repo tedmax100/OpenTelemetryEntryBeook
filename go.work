@@ -1,10 +1,14 @@
-go 1.22.3
+go 1.23.0
 
 use (
+	./additional_examples/context_switch/cs1
+	./additional_examples/ironman_2024_speech/services
+	./additional_examples/ithome_2024
 	./ch11/app
+	./ch12/opentelemetry-demo/src/checkoutservice
+	./ch5/rolldice
 	./ch6/exemplar
 	./ch6/trace
 	./ch7/app
 	./ch7/other_app
-	./additional_examples/ironman_2024_speech/services
 )
