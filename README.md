@@ -53,6 +53,9 @@ Ch 5
 - [OTel Errors](/ch5/OTel%20Errors.md)
 - [OTel Go SDK + Slog](/ch5/rolldice/)
 
+Ch 6
+- [來玩 OTel Go Metric Exemplar](/ch6/exemplar/)
+
 Ch 7
 - [OTel Collector - Filter Processor 的用法很多種？](/ch7/filter_processor.md)
 
