@@ -4,7 +4,9 @@ receivers:
   otlp:
     protocols:
       grpc:
+        endpoint: otelcol:4317
       http:
+        endpoint: otelcol:4318
         cors:
           allowed_origins:
             - "http://*"
@@ -15,21 +17,26 @@ exporters:
     verbosity: detailed
     sampling_initial: 5
     sampling_thereafter: 200
+  prometheus:
+    endpoint: "0.0.0.0:9090"
+    namespace: demo
+    enable_open_metrics: true
 
-
-
+  otlp:
+    endpoint: "tempo:4317"
+    tls:
+      insecure: true
 
 service:
-  extensions: [pprof, zpages, health_check]
   pipelines:
     traces:
       receivers: [otlp]
       processors: []
-      exporters: [ debug]
+      exporters: [ debug, otlp]
     metrics:
       receivers: [otlp]
       processors: []
-      exporters: [debug]
+      exporters: [debug,prometheus]
     logs:
       receivers: [otlp]
       processors: []
