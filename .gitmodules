@@ -1,0 +1,6 @@
+[submodule "additional_examples/additional_examples/devops_2024_speech"]
+	path = additional_examples/additional_examples/devops_2024_speech
+	url = https://github.com/tedmax100/devops_meetup.git
+[submodule "additional_examples/devops_2024_speech"]
+	path = additional_examples/devops_2024_speech
+	url = https://github.com/tedmax100/devops_meetup.git
