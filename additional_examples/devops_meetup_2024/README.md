@@ -14,5 +14,5 @@
 ```make build```
 2. 啟動系統
 ```docker compose -f compose.yml up -d```
-3. 每次請務必關閉系統並刪除容器, 我 PostgreSQL 抄寫還沒弄好 QQ
+3. 關閉電商系統以及其他容器
 ```docker compose -f compose.yml down```
